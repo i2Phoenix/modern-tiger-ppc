@@ -1,0 +1,60 @@
+--- a/sshd.c	2026-04-02 12:09:03.000000000 +0400
++++ b/sshd.c	2026-04-19 17:42:37.000000000 +0400
+@@ -51,6 +51,12 @@
+ #include <unistd.h>
+ #include <limits.h>
+ 
++#ifdef __APPLE__
++/* Pre-init CoreFoundation in parent before fork/rexec so pam_securityserver's
++ * dlopen does not crash __CFInitialize inside sshd-session child on Tiger. */
++#include <CoreFoundation/CoreFoundation.h>
++#endif
++
+ #ifdef HAVE_SECUREWARE
+ #include <sys/security.h>
+ #include <prot.h>
+@@ -1313,6 +1319,14 @@
+ 	sigemptyset(&sigmask);
+ 	sigprocmask(SIG_SETMASK, &sigmask, NULL);
+ 
++#ifdef __APPLE__
++	{
++		CFStringRef _s = CFStringCreateWithCString(kCFAllocatorDefault, "sshd", kCFStringEncodingUTF8);
++		if (_s != NULL) CFRelease(_s);
++		(void)CFBundleGetMainBundle();
++	}
++#endif
++
+ 	/* Save argv. Duplicate so setproctitle emulation doesn't clobber it */
+ 	saved_argc = ac;
+ 	rexec_argc = ac;
+--- a/sshd-session.c	2026-04-02 12:09:03.000000000 +0400
++++ b/sshd-session.c	2026-04-19 17:42:37.000000000 +0400
+@@ -52,6 +52,12 @@
+ #include <unistd.h>
+ #include <limits.h>
+ 
++#ifdef __APPLE__
++/* Pre-init CoreFoundation in parent before fork/rexec so pam_securityserver's
++ * dlopen does not crash __CFInitialize inside sshd-session child on Tiger. */
++#include <CoreFoundation/CoreFoundation.h>
++#endif
++
+ #ifdef HAVE_SECUREWARE
+ #include <sys/security.h>
+ #include <prot.h>
+@@ -801,6 +807,14 @@
+ 	sigemptyset(&sigmask);
+ 	sigprocmask(SIG_SETMASK, &sigmask, NULL);
+ 
++#ifdef __APPLE__
++	{
++		CFStringRef _s = CFStringCreateWithCString(kCFAllocatorDefault, "sshd", kCFStringEncodingUTF8);
++		if (_s != NULL) CFRelease(_s);
++		(void)CFBundleGetMainBundle();
++	}
++#endif
++
+ #ifdef HAVE_SECUREWARE
+ 	(void)set_auth_parameters(ac, av);
+ #endif

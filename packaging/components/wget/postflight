@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+source=/usr/local/bin/wget
+destination=/usr/bin/wget
+backup=/usr/bin/originals/wget.apple-tiger
+/bin/mkdir -p /usr/bin/originals
+if [ -e "$destination" ] || [ -L "$destination" ]; then
+    if [ ! -L "$destination" ] && [ ! -f "$backup" ]; then
+        /bin/cp -p "$destination" "$backup"
+    fi
+    /bin/rm -f "$destination"
+fi
+/bin/ln -s "$source" "$destination"
+
+/usr/bin/wget --version | /usr/bin/head -1
+echo '[modern-tiger-ppc] wget installed as /usr/bin/wget'
+exit 0

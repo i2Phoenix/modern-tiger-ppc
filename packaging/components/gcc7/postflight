@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+prefix=/usr/local
+gcc_prefix=$prefix/gcc7/7.5.0
+gcc_lib=$gcc_prefix/lib/gcc/7
+/bin/mkdir -p "$prefix/lib/gcc/7" "$prefix/bin"
+
+runtime_count=0
+for runtime_path in "$gcc_lib"/*.dylib; do
+    [ -e "$runtime_path" ] || [ -L "$runtime_path" ] || continue
+    runtime=$(/usr/bin/basename "$runtime_path")
+    /bin/ln -sfn "$runtime_path" "$prefix/lib/gcc/7/$runtime"
+    runtime_count=$((runtime_count + 1))
+done
+[ "$runtime_count" -gt 0 ] || { echo 'GCC runtime directory contains no dylibs' >&2; exit 1; }
+for tool in gcc-7 g++-7 cpp-7; do
+    [ ! -x "$gcc_prefix/bin/$tool" ] || \
+        /bin/ln -sfn "$gcc_prefix/bin/$tool" "$prefix/bin/$tool"
+done
+
+"$gcc_prefix/bin/gcc-7" --version | /usr/bin/head -1
+echo '[modern-tiger-ppc] GCC toolchain installed'
+exit 0

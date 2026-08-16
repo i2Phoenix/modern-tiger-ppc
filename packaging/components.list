@@ -1,0 +1,12 @@
+# Component build and installation order. One directory name per line.
+gcc7
+syslibs
+perl
+make
+openssl
+ca-roots
+curl
+wget
+openssh
+git
+security-shim

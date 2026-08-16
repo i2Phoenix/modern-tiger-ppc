@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+/bin/mkdir -p /usr/bin/originals
+for name in pkgconf pkg-config; do
+    source=/usr/local/bin/pkgconf
+    destination=/usr/bin/$name
+    backup=/usr/bin/originals/$name.apple-tiger
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+        if [ ! -L "$destination" ] && [ ! -f "$backup" ]; then
+            /bin/cp -p "$destination" "$backup"
+        fi
+        /bin/rm -f "$destination"
+    fi
+    /bin/ln -s "$source" "$destination"
+done
+
+/usr/bin/pkgconf --version
+echo '[modern-tiger-ppc] foundation libraries installed'
+exit 0

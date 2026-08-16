@@ -1,0 +1,12 @@
+# OpenSSH 10.3p1 configuration for Mac OS X Tiger PowerPC.
+Port 22
+HostKey /etc/ssh_host_rsa_key
+HostKey /etc/ssh_host_ed25519_key
+KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,curve25519-sha256,diffie-hellman-group14-sha256,diffie-hellman-group-exchange-sha256
+UsePAM yes
+PasswordAuthentication yes
+KbdInteractiveAuthentication yes
+PubkeyAuthentication yes
+PermitRootLogin no
+AuthorizedKeysFile .ssh/authorized_keys
+Subsystem sftp /usr/local/openssh/libexec/sftp-server

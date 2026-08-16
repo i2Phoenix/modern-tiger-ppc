@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+/bin/mkdir -p /usr/bin/originals
+if [ -e /usr/bin/gnumake ] || [ -L /usr/bin/gnumake ]; then
+    if [ ! -L /usr/bin/gnumake ] && \
+        [ ! -f /usr/bin/originals/gnumake.apple-tiger ]; then
+        /bin/cp -p /usr/bin/gnumake /usr/bin/originals/gnumake.apple-tiger
+    fi
+    /bin/rm -f /usr/bin/gnumake
+fi
+/bin/ln -s /usr/local/bin/make /usr/bin/gnumake
+
+if [ ! -e /usr/bin/make ] && [ ! -L /usr/bin/make ]; then
+    /bin/ln -s gnumake /usr/bin/make
+fi
+
+/usr/bin/gnumake --version | /usr/bin/head -1
+echo '[modern-tiger-ppc] GNU Make installed'
+exit 0

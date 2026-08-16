@@ -1,0 +1,38 @@
+--- a/config.mak.uname
++++ b/config.mak.uname
+@@ -147,8 +147,9 @@
+ 	HAVE_BSD_SYSCTL = YesPlease
+ 	FREAD_READS_DIRECTORIES = UnfortunatelyYes
+ 	HAVE_NS_GET_EXECUTABLE_PATH = YesPlease
+-	CSPRNG_METHOD = arc4random
+-	USE_ENHANCED_BASIC_REGULAR_EXPRESSIONS = YesPlease
++	# Tiger has no arc4random_buf; use OpenSSL instead.
++	CSPRNG_METHOD = openssl
++	# Tiger has no REG_ENHANCED.
+ 
+         ifeq ($(uname_M),arm64)
+ 		HOMEBREW_PREFIX = /opt/homebrew
+@@ -164,8 +165,8 @@
+ 	# Unix domain sockets and PThreads.
+         ifndef NO_PTHREADS
+         ifndef NO_UNIX_SOCKETS
+-	FSMONITOR_DAEMON_BACKEND = darwin
+-	FSMONITOR_OS_SETTINGS = darwin
++	# Tiger has no dispatch.h; disable the Darwin fsmonitor backend.
++	# FSMONITOR_OS_SETTINGS intentionally unset.
+         endif
+         endif
+ 
+--- a/Makefile
++++ b/Makefile
+@@ -3346,7 +3346,8 @@
+ 
+ test_bindir_programs := $(patsubst %,bin-wrappers/%,$(BINDIR_PROGRAMS_NEED_X) $(BINDIR_PROGRAMS_NO_X) $(TEST_PROGRAMS_NEED_X))
+ 
+-all:: $(TEST_PROGRAMS) $(test_bindir_programs) $(UNIT_TEST_PROGS) $(CLAR_TEST_PROG)
++# clar uses copyfile.h, which is unavailable on Tiger.
++all:: $(TEST_PROGRAMS) $(test_bindir_programs)
+ 
+ $(test_bindir_programs): bin-wrappers/%: bin-wrappers/wrap-for-bin.sh
+ 	$(QUIET_GEN)sed -e '1s|#!.*/sh|#!$(SHELL_PATH_SQ)|' \
+

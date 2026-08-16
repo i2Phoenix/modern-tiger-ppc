@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e
+
+certs_dir=/usr/local/ssl/certs/modern-roots
+anchors=/System/Library/Keychains/X509Anchors
+original_backup=$anchors.pre-modern-tiger-ppc
+transaction_backup=$anchors.modern-tiger-ppc-before.$$
+
+[ -d "$certs_dir" ] || { echo "missing $certs_dir" >&2; exit 1; }
+[ -f "$anchors" ] || { echo "missing $anchors" >&2; exit 1; }
+[ -x /usr/bin/security ] || { echo 'missing /usr/bin/security' >&2; exit 1; }
+
+[ -f "$original_backup" ] || /bin/cp -p "$anchors" "$original_backup"
+/bin/cp -p "$anchors" "$transaction_backup"
+
+added=0
+existing=0
+failed=0
+for certificate in "$certs_dir"/*.der; do
+    [ -f "$certificate" ] || continue
+    set +e
+    result=$(/usr/bin/security add-certificates -k "$anchors" "$certificate" 2>&1)
+    status=$?
+    set -e
+    if [ "$status" -eq 0 ]; then
+        added=$((added + 1))
+    elif printf '%s\n' "$result" | /usr/bin/grep -Ei 'already|duplicate' >/dev/null 2>&1; then
+        existing=$((existing + 1))
+    else
+        failed=$((failed + 1))
+        printf '%s\n' "$result" >&2
+    fi
+done
+
+if [ "$failed" -ne 0 ]; then
+    /bin/cp -p "$transaction_backup" "$anchors"
+    /bin/rm -f "$transaction_backup"
+    echo "[modern-tiger-ppc] CA import failed; restored the transaction backup" >&2
+    exit 1
+fi
+
+/bin/rm -f "$transaction_backup"
+echo "[modern-tiger-ppc] X509Anchors updated: added=$added existing=$existing"
+exit 0

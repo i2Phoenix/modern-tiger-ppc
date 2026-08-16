@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set -e
+
+prefix=/usr/local/openssh
+sshd=$prefix/sbin/sshd
+keygen=$prefix/bin/ssh-keygen
+plist=/System/Library/LaunchDaemons/ssh.plist
+plist_backup=$plist.apple-5.1p1
+plist_source=$prefix/share/launchd/ssh.plist.modern-tiger-ppc
+plist_new=$plist.modern-tiger-ppc-new
+config=/etc/openssh/sshd_config
+config_source=$prefix/etc/sshd_config.modern-tiger-ppc
+
+for required in "$sshd" "$keygen" "$plist_source" "$config_source"; do
+    [ -f "$required" ] || { echo "missing $required" >&2; exit 1; }
+done
+
+/bin/mkdir -p /etc/openssh /usr/bin/originals
+if [ ! -f "$config" ]; then
+    /bin/cp "$config_source" "$config"
+    /usr/sbin/chown root:wheel "$config"
+    /bin/chmod 644 "$config"
+fi
+
+if [ ! -f /etc/ssh_host_rsa_key ]; then
+    "$keygen" -q -t rsa -b 3072 -f /etc/ssh_host_rsa_key -N '' -C '' </dev/null
+fi
+if [ ! -f /etc/ssh_host_ed25519_key ]; then
+    "$keygen" -q -t ed25519 -f /etc/ssh_host_ed25519_key -N '' -C '' </dev/null
+fi
+
+"$sshd" -t -f "$config"
+
+if [ ! -f "$plist_backup" ]; then
+    if [ -f "$plist" ] && \
+        /usr/bin/grep -q /usr/local/openssh "$plist" 2>/dev/null; then
+        echo "active SSH plist is already modern but $plist_backup is missing" >&2
+        exit 1
+    fi
+    [ ! -f "$plist" ] || /bin/cp -p "$plist" "$plist_backup"
+fi
+[ -f "$plist_backup" ] || { echo "cannot preserve the original SSH plist" >&2; exit 1; }
+
+/bin/cp "$plist_source" "$plist_new"
+/usr/sbin/chown root:wheel "$plist_new"
+/bin/chmod 644 "$plist_new"
+
+/bin/launchctl unload "$plist" >/dev/null 2>&1 || true
+/bin/mv -f "$plist_new" "$plist"
+if ! /bin/launchctl load -w "$plist"; then
+    /bin/cp -p "$plist_backup" "$plist"
+    /bin/launchctl load -w "$plist" >/dev/null 2>&1 || true
+    echo 'failed to load modern OpenSSH; restored the Apple launchd plist' >&2
+    exit 1
+fi
+
+for name in ssh scp sftp ssh-add ssh-agent ssh-keygen ssh-keyscan; do
+    source=$prefix/bin/$name
+    destination=/usr/bin/$name
+    backup=/usr/bin/originals/$name.apple-tiger
+    [ -x "$source" ] || continue
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+        if [ ! -L "$destination" ] && [ ! -f "$backup" ]; then
+            /bin/cp -p "$destination" "$backup"
+        fi
+        /bin/rm -f "$destination"
+    fi
+    /bin/ln -s "$source" "$destination"
+done
+
+/bin/sleep 1
+"$sshd" -t -f "$config"
+echo '[modern-tiger-ppc] OpenSSH service and clients installed'
+exit 0

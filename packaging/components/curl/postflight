@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+source=/usr/local/bin/curl
+destination=/usr/bin/curl
+backup=/usr/bin/originals/curl.apple-tiger
+/bin/mkdir -p /usr/bin/originals
+if [ -e "$destination" ] || [ -L "$destination" ]; then
+    if [ ! -L "$destination" ] && [ ! -f "$backup" ]; then
+        /bin/cp -p "$destination" "$backup"
+    fi
+    /bin/rm -f "$destination"
+fi
+/bin/ln -s "$source" "$destination"
+
+/usr/bin/curl --version | /usr/bin/head -2
+echo '[modern-tiger-ppc] curl installed as /usr/bin/curl'
+exit 0

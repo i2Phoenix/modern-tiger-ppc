@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+expected_version=10.4.11
+expected_build=8S165
+machine=$(/usr/bin/uname -p)
+version=$(/usr/bin/sw_vers -productVersion)
+build=$(/usr/bin/sw_vers -buildVersion)
+
+if [ "$machine" != powerpc ]; then
+    echo "modern-tiger-ppc requires PowerPC; detected $machine" >&2
+    exit 1
+fi
+if [ "$version" != "$expected_version" ] || [ "$build" != "$expected_build" ]; then
+    echo "modern-tiger-ppc requires Mac OS X $expected_version ($expected_build); detected $version ($build)" >&2
+    exit 1
+fi
+if [ "$(/usr/bin/id -u)" -ne 0 ]; then
+    echo "modern-tiger-ppc package scripts require Installer root authorization" >&2
+    exit 1
+fi
+
+exit 0

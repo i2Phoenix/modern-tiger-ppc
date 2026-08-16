@@ -1,0 +1,72 @@
+#!/bin/bash
+
+set -e
+
+framework_dir=/System/Library/Frameworks/Security.framework/Versions/A
+active=$framework_dir/Security
+pristine=$framework_dir/Security.pristine
+candidate=/usr/local/libexec/modern-tiger-ppc/Security.staged
+private_parent=/System/Library/PrivateFrameworks
+private_framework=$private_parent/SecurityBackup.framework
+private_previous=$private_parent/SecurityBackup.framework.previous
+private_temporary=$private_parent/.SecurityBackup.framework.modern.$$
+backup_binary=$private_temporary/Versions/A/SecurityBackup
+active_temporary=$framework_dir/.Security.modern.$$
+expected_backup=/System/Library/PrivateFrameworks/SecurityBackup.framework/Versions/A/SecurityBackup
+
+for tool in /usr/bin/install_name_tool /usr/bin/otool /usr/bin/security; do
+    [ -x "$tool" ] || { echo "Xcode 2.5 tool missing: $tool" >&2; exit 1; }
+done
+[ -f "$candidate" ] || { echo "missing shim payload: $candidate" >&2; exit 1; }
+[ -f "$active" ] || { echo "missing Tiger Security binary: $active" >&2; exit 1; }
+
+if [ ! -f "$pristine" ]; then
+    if /usr/bin/otool -L "$active" | /usr/bin/grep -q SecurityBackup.framework; then
+        echo 'active Security is already a shim but Security.pristine is missing' >&2
+        exit 1
+    fi
+    /bin/cp -p "$active" "$pristine"
+    /usr/sbin/chown root:wheel "$pristine"
+    /bin/chmod 755 "$pristine"
+fi
+
+case "$private_temporary" in
+    "$private_parent"/.SecurityBackup.framework.modern.*) ;;
+    *) echo 'unsafe temporary framework path' >&2; exit 1 ;;
+esac
+/bin/rm -rf "$private_temporary"
+/bin/mkdir -p "$private_temporary/Versions/A"
+/bin/cp -p "$pristine" "$backup_binary"
+/usr/bin/install_name_tool -id "$expected_backup" "$backup_binary"
+(cd "$private_temporary" && /bin/ln -s Versions/Current/SecurityBackup SecurityBackup)
+(cd "$private_temporary/Versions" && /bin/ln -s A Current)
+/usr/sbin/chown -R root:wheel "$private_temporary"
+/bin/chmod 755 "$backup_binary"
+/usr/bin/otool -D "$backup_binary" | /usr/bin/grep -q "$expected_backup"
+/usr/bin/otool -L "$candidate" | /usr/bin/grep -q "$expected_backup"
+
+/bin/rm -rf "$private_previous"
+if [ -d "$private_framework" ]; then
+    /bin/mv "$private_framework" "$private_previous"
+fi
+/bin/mv "$private_temporary" "$private_framework"
+
+/bin/cp "$candidate" "$active_temporary"
+/usr/sbin/chown root:wheel "$active_temporary"
+/bin/chmod 755 "$active_temporary"
+/bin/mv -f "$active_temporary" "$active"
+
+if ! /usr/bin/security list-keychains >/dev/null 2>&1; then
+    /bin/cp -p "$pristine" "$active_temporary"
+    /usr/sbin/chown root:wheel "$active_temporary"
+    /bin/chmod 755 "$active_temporary"
+    /bin/mv -f "$active_temporary" "$active"
+    /bin/rm -rf "$private_framework"
+    [ ! -d "$private_previous" ] || /bin/mv "$private_previous" "$private_framework"
+    echo 'Security framework load test failed; restored the pristine framework' >&2
+    exit 1
+fi
+
+/usr/bin/otool -L "$active" | /usr/bin/grep -q "$expected_backup"
+echo '[modern-tiger-ppc] Security shim activated; restart required'
+exit 0

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+ssl=/usr/local/ssl
+/bin/mkdir -p /usr/bin/originals
+for name in openssl c_rehash; do
+    source=$ssl/bin/$name
+    destination=/usr/bin/$name
+    backup=/usr/bin/originals/$name.apple-tiger
+    [ -x "$source" ] || continue
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+        if [ ! -L "$destination" ] && [ ! -f "$backup" ]; then
+            /bin/cp -p "$destination" "$backup"
+        fi
+        /bin/rm -f "$destination"
+    fi
+    /bin/ln -s "$source" "$destination"
+done
+
+if ! /usr/bin/grep -q '# modern-tiger-ppc TLS environment' /etc/profile 2>/dev/null; then
+    cat >> /etc/profile <<'PROFILE'
+
+# modern-tiger-ppc TLS environment
+export SSL_CERT_FILE="/usr/local/ssl/certs/cacert.pem"
+export CURL_CA_BUNDLE="/usr/local/ssl/certs/cacert.pem"
+export SSL_CERT_DIR="/usr/local/ssl/certs"
+PROFILE
+fi
+
+"$ssl/bin/c_rehash" "$ssl/certs"
+"$ssl/bin/openssl" version
+echo '[modern-tiger-ppc] OpenSSL installed'
+exit 0

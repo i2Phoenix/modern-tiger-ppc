@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+/usr/local/perl-5.42/bin/perl --version | /usr/bin/head -2
+echo '[modern-tiger-ppc] Perl installed under /usr/local/perl-5.42'
+exit 0

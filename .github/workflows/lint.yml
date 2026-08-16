@@ -1,0 +1,21 @@
+name: repository checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Run repository policy checks
+        run: make lint
+      - name: Compile the linker translator
+        run: cc -std=c99 -Wall -Wextra -Werror tools/tiger-ld/ld-wrapper.c -o /tmp/tiger-ld-wrapper
+      - name: Check the Tiger-only SHA-256 helper source
+        run: test -s tools/tiger-sha256/tiger-sha256.c

@@ -1,0 +1,26 @@
+.DS_Store
+.env
+config/target.env
+
+# Generated or host-specific data
+.work/
+cache/sources/
+dist/
+logs/
+
+# Release bundles are generated outside the repository on Tiger
+*.pkg
+*.mpkg
+*.dmg
+
+# Never commit system or toolchain binaries
+Security.new
+Security.staged
+Security.pristine
+SecurityBackup.framework/
+*.o
+*.dylib
+
+# IDE and agent-local state
+.claude/
+.worktrees/

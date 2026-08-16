@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+source=/usr/local/git/bin/git
+destination=/usr/bin/git
+backup=/usr/bin/originals/git.apple-tiger
+/bin/mkdir -p /usr/bin/originals
+if [ -e "$destination" ] || [ -L "$destination" ]; then
+    if [ ! -L "$destination" ] && [ ! -f "$backup" ]; then
+        /bin/cp -p "$destination" "$backup"
+    fi
+    /bin/rm -f "$destination"
+fi
+/bin/ln -s "$source" "$destination"
+
+/usr/bin/git --version
+echo '[modern-tiger-ppc] Git installed as /usr/bin/git'
+exit 0
