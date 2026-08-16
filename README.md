@@ -33,11 +33,11 @@ Ready-made installers support only PowerPC Macs running the exact Mac OS X
 1. On a modern computer, open the
    [GitHub Releases](https://github.com/i2Phoenix/modern-tiger-ppc/releases)
    page.
-2. Under **Assets**, download the `.mpkg` installer. Verify its SHA-256 checksum
-   against the release notes.
-3. Transfer the downloaded `.mpkg` to the Tiger Mac using USB storage, a local
-   file share, or SCP.
-4. Open the `.mpkg` in Finder and run Installer. If needed, choose
+2. Under **Assets**, download the `.mpkg.zip` release asset. Verify its SHA-256
+   checksum against the release notes.
+3. Transfer the downloaded ZIP to the Tiger Mac using USB storage, a local file
+   share, or SCP, then extract it.
+4. Open the extracted `.mpkg` in Finder and run Installer. If needed, choose
    **Customize** to view the components and deselect any you do not want to
    install.
 5. Restart when requested, then perform the consumer checks documented in
